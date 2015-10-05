@@ -16,8 +16,7 @@ using MongoDB.Bson.IO;
 namespace SignalRSelfHost
 {
     class Program
-    {//asdasd
-
+    {
         static void Main(string[] args)
         {
             // This will *ONLY* bind to localhost, if you want to bind to all addresses
@@ -41,25 +40,23 @@ namespace SignalRSelfHost
                 app.MapSignalR();
             }
         }
+
         public class MyHub : Hub
         {
             
             public async void Login(string user)
-            {                
-               
-                
+            {
+
             }
 
             public void SendMessage(string message)
             {
-                Console.WriteLine("Message: {0}", message);
-                
+                Console.WriteLine("Message: {0}", message);                
             }
 
             //When user disconnects
             public override Task OnDisconnected(bool stopCalled = true)
-            {
-                
+            {                
                 Console.WriteLine("User disconnects " + Context.ConnectionId);
                 return base.OnDisconnected(stopCalled);
             }
@@ -75,35 +72,23 @@ namespace SignalRSelfHost
             public override Task OnReconnected()
             {
                 Console.WriteLine("User reconnects " + Context.ConnectionId);
-                return base.OnReconnected();
-
-                
+                return base.OnReconnected();                
             }
-
         }
-
-
     }
 }
 
-
-
 //All connected clients.
-
 //Clients.All.addContosoChatMessageToPage(name, message);
 
 //Only the calling client.
-
 //Clients.Caller.addContosoChatMessageToPage(name, message);
 
 //All clients except the calling client.
-
 //Clients.Others.addContosoChatMessageToPage(name, message);
 
 //A specific client identified by connection ID.
-
 //Clients.Client(Context.ConnectionId).addContosoChatMessageToPage(name, message);
-
 
 //var filter = Builders<BsonDocument>.Filter.Gt("grades.score", 30);
 //var result = await onlineUsersCollection.Find(filter).ToListAsync();
