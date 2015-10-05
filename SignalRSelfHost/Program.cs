@@ -46,7 +46,7 @@ namespace SignalRSelfHost
             
             public async void Login(string user)
             {
-
+                Console.WriteLine(user);
             }
 
             public void SendMessage(string message)
