@@ -47,8 +47,7 @@ namespace SignalRSelfHost
             public async void Login(string user)
             {                
                
-                Clients.Caller.getYourSelf(yourSelf.ToJson(jsonWriterSettings));
-
+                
             }
 
             public void SendMessage(string message)
