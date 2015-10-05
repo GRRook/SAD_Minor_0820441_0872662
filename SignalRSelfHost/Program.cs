@@ -16,7 +16,7 @@ using MongoDB.Bson.IO;
 namespace SignalRSelfHost
 {
     class Program
-    {
+    {//asdasd
 
         static void Main(string[] args)
         {
