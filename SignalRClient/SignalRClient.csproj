@@ -118,6 +118,7 @@
     <Content Include="includes\js\OTR\vendor\cryptojs\sha256.js" />
     <Content Include="includes\js\OTR\vendor\eventemitter.js" />
     <Content Include="includes\js\OTR\vendor\salsa20.js" />
+    <Content Include="includes\style\style.css" />
     <Content Include="index.html" />
     <Content Include="includes\js\jquery.js" />
     <Content Include="includes\js\jquery.signalR.js" />
@@ -148,7 +149,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="includes\images\" />
-    <Folder Include="includes\style\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

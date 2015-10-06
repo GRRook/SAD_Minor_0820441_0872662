@@ -3,10 +3,81 @@
 <head>
     <title></title>
 	<meta charset="utf-8" />
-    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css"> 
+    <link rel="stylesheet" type="text/css" href="includes/style/style.css">       
 </head>
 <body>
+    <div class="container">
+        <div class="row">
+            <h3 class="text-center"> CHATTING </h3>
+            <br />
+            
+            <!-- Messages -->
+            <div class="col-md-8">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <span class="chatTab">Andre</span> <a><i class="fa fa-times close"></i></a>
+                    </div>
+                    <div class="panel-body chatbody">
+                        <ul class="media-list">
+                            <li class="media">
+                                <div class="media-body">
+                                    <div class="media">
+                                        <a class="pull-left">
+                                            <img class="media-object img-circle " src="includes/images/Man.png" />
+                                        </a>
+                                        <div class="media-body">
+                                            MessageMessageMessageMessageMessageMessageMessage
+                                            MessageMessageMessageMessageMessageMessageMessage
+                                            MessageMessageMessageMessageMessageMessageMessage
+                                            <br />
+                                            <small class="text-muted"> Gerben </small>
+                                            <hr />
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="panel-footer border">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Type bericht.." />
+                            <span class="input-group-btn">
+                                <button class="btn btn-success" type="button">Stuur</button>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
+            <!-- Online users -->
+            <div class="col-md-4">
+                <div class="panel panel-primary onlineUsers">
+                    <div class="panel-heading">
+                        ONLINE USERS
+                    </div>
+                    <div class="panel-body">
+                        <ul class="media-list">
+                            <li class="media user">
+                                <div class="media-body">
+                                    <div class="media">
+                                        <a class="pull-left">
+                                            <img class="media-object img-circle" style="max-height:40px;" src="includes/images/Vrouw.png" />
+                                        </a>
+                                        <div class="media-body">
+                                            <h5> Gerben </h5>
+                                            <small class="text-muted">Man</small>
+                                            <span ng-show="true" class="badge pull-right warning">4</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
 

@@ -1,0 +1,22 @@
+﻿body {
+}
+
+
+/* User Panel */
+.panel-body {
+	height: 467px; 
+	overflow-y: scroll; 
+	overflow-x: hidden;
+}
+
+.user {
+    cursor: pointer !important;
+}
+
+.onlineUsers {    
+    min-height: 565px;
+}
+
+.chatTab {
+    cursor: pointer !important;
+}
