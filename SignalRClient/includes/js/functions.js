@@ -3,6 +3,12 @@ $.connection.hub.url = "http://localhost:8080/signalr";
 // Declare a proxy to reference the hub.
 var chatHubConnection = $.connection.myHub;
 
+// User login function
+$('#loginUser').on('click', function () {
+    // User the entered username
+    login($('#username').val());
+});
+
 function login(username) {
     // Start connection
     $.connection.hub.start().done(function () {
@@ -22,9 +28,9 @@ function login(username) {
 function startConversation() {
     // provide options
     var options = {
-        fragment_size: 140,
-        send_interval: 200,
-        priv: localStorage.getItem("DSA")
+        fragment_size: 140
+        , send_interval: 200
+        , priv: localStorage.getItem("DSA")
     }
 
     /*For each user you're communicating with, instantiate an OTR object.*/

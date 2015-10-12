@@ -37,7 +37,16 @@
     <!-- Message and online users -->
     <div class="container" style="margin-top:50px;">
         <div class="row">
-            <br />            
+            <div class="col-xs-12 col-md-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="username" placeholder="Vul een gebruikersnaam in." />
+                    <span class="input-group-btn">
+                        <button class="btn btn-primary" type="button" id="loginUser">Login</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="row">                    
             <!-- Messages -->
             <div class="col-md-8">
                 <div class="panel panel-primary">
@@ -111,24 +120,17 @@
 
 <!-- Jquery -->
 <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.11.2.min.js"></script>
-
 <!-- Bootstrap -->
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-
 <!-- SignalR dependencies -->
 <script src="http://ajax.aspnetcdn.com/ajax/signalr/jquery.signalr-2.2.0.min.js"></script>
 <script src="http://localhost:8080/signalr/hubs"></script>
-
 <!-- OTR dependencies -->
-<script src="build/dep/bigint.js"></script>
-<script src="build/dep/crypto.js"></script>
-<script src="build/dep/eventemitter.js"></script>
+<script src="includes/js/OTR/build/dep/salsa20.js"></script>
+<script src="includes/js/OTR/build/dep/bigint.js"></script>
+<script src="includes/js/OTR/build/dep/crypto.js"></script>
+<script src="includes/js/OTR/build/dep/eventemitter.js"></script>
 <!-- Load otr.js -->
-<script src="build/otr.min.js"></script>
-
+<script src="includes/js/OTR/build/otr.js"></script>
 <!-- Include js/functions.js -->
 <script src="includes/js/functions.js"></script>
-
-<script>
-    login("Andre");
-</script>
