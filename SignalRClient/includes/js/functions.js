@@ -6,6 +6,8 @@ var chatHubConnection = $.connection.myHub;
 var selectedUser = null;
 // Waarom weet niemand
 var selectedMessages = null;
+//
+var interval = null;
 
 // User login event
 $('#loginUser').on('click', function() {
@@ -15,20 +17,39 @@ $('#loginUser').on('click', function() {
 
 // Send message event
 $('#sendMessage').on('click', function () {
-    var msg = $('#secretMessage').val();
-    var rcptId = selectedUser;
-    chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), rcptId, msg);
-    addMessageToList(msg);
-
-    // Clear the input
-    $('#secretMessage').val('');
+    // Only send the message if a user is selected
+    if (selectedUser != null) {
+        // Get the messege
+        var msg = $('#secretMessage').val();
+        // Get the recipient
+        var rcptId = selectedUser;
+        // Send the message
+        chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), rcptId, msg);
+        // Show the message in the chatbox
+        addMessageToList(msg);
+        // Clear the input
+        $('#secretMessage').val('');
+    }
 });
 
 // Select a user event
 $(document).on('click', '.user', function () {
-    console.log($(this).find('h5').attr('id'));
-    selectedUser = $(this).find('h5').attr('id');
-    $('.chatTab').text($(this).find('h5').text());
+    var userElement = $(this).find('h5');
+    console.log(userElement.attr('id'));
+    selectedUser = userElement.attr('id');
+
+    // Set the selected username on top
+    $('.chatTab').text(userElement.text());
+
+    // Enable the send button
+    var sendButton = $('#sendMessage');
+    if(sendButton.hasClass('btn-default')){
+        // Enable the "send message" button
+        sendButton.removeClass('btn-default').addClass('btn-success');
+    }
+
+    // Cancel the interval timer
+    clearInterval(interval);
 });
 
 // Receive new online user event
@@ -52,10 +73,18 @@ chatHubConnection.client.getAllOnlineUsers = function (users) {
 
 // Receive new message event
 chatHubConnection.client.getNewMessage = function (sender, message) {
-    console.log(sender);
-    console.log(message);
-
-    addMessageToList(message);
+    // If the sender is the selected user
+    if (selectedUser == sender) {
+        // Add message to the chatbox
+        addMessageToList(message);
+    }
+    else
+    {
+        interval = setInterval(function () {
+            $('#' + sender).closest('.onlineUsers .user').toggleClass('alert-danger');
+            console.log('alert danger');
+        }, 1000);
+    }
 };
 
 // Receive disconnected user event
@@ -68,7 +97,7 @@ chatHubConnection.client.getDisconnectedUser = function (id) {
 function addUserToOnlineUserList(id, username) {
     if(id != sessionStorage.getItem("connectionID")){
         $('.onlineUsers .panel-body > .media-list').append(
-            "<li class=\"media user\"> \
+            "<li class=\"media user alert alert-info\"> \
                 <div class=\"media-body\"> \
                     <div class=\"media\"> \
                         <a class=\"pull-left\"> \
@@ -77,7 +106,6 @@ function addUserToOnlineUserList(id, username) {
                         <div class=\"media-body\"> \
                             <h5 id=\"" + id + "\"> " + username + " </h5> \
                             <small class=\"text-muted\">Man</small> \
-                            <span class=\"badge pull-right warning\">4</span> \
                         </div> \
                     </div> \
                 </div> \

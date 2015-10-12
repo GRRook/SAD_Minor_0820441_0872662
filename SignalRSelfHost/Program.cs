@@ -3,15 +3,8 @@ using Microsoft.Owin.Cors;
 using Microsoft.Owin.Hosting;
 using Owin;
 using System;
-using Newtonsoft.Json;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json.Linq;
-using MongoDB.Driver;
-using MongoDB.Bson;
-using MongoDB.Bson.IO;
 
 namespace SignalRSelfHost
 {
