@@ -17,6 +17,9 @@ namespace SignalRSelfHost
 {
     class Program
     {
+        // Global collection of all online users
+        private static Dictionary<string, string> onlineUsers = new Dictionary<string, string>();
+
         static void Main(string[] args)
         {
             // This will *ONLY* bind to localhost, if you want to bind to all addresses
@@ -43,35 +46,53 @@ namespace SignalRSelfHost
 
         public class MyHub : Hub
         {
-            
-            public async void Login(string user)
+            public void Login(string username)
             {
-                Console.WriteLine(user);
+                Console.WriteLine(username);
+                
+                // Add the user to the collection
+                onlineUsers.Add(Context.ConnectionId, username);
+                
+                // Return this user to all other users
+                Clients.Others.getNewOnlineUser(Context.ConnectionId, username);
+
+                // Return a collection of all online users
+                Clients.Caller.getAllOnlineUsers(onlineUsers);
             }
 
-            public void SendMessage(string message)
+            public void SendMessage(string sender, string recipient, string message)
             {
-                Console.WriteLine("Message: {0}", message);                
+                Console.WriteLine("Message: {0}", message);
+                
+                // Send the message to the recipient
+                Clients.Client(recipient).getNewMessage(sender, message);              
             }
 
             //When user disconnects
             public override Task OnDisconnected(bool stopCalled = true)
             {                
-                Console.WriteLine("User disconnects " + Context.ConnectionId);
+                Console.WriteLine("User disconnects {0}", Context.ConnectionId);
+
+                // Remove the user form the collection
+                onlineUsers.Remove(Context.ConnectionId);
+
+                // Send the disconnection of the user to all other users
+                Clients.Others.getDisconnectedUser(Context.ConnectionId);
+
                 return base.OnDisconnected(stopCalled);
             }
 
             //When user connects
             public override Task OnConnected()
             {
-                Console.WriteLine("User connects " + Context.ConnectionId);
+                Console.WriteLine("User connects {0}", Context.ConnectionId);
                 return base.OnConnected();
             }
 
             //When user reconnects
             public override Task OnReconnected()
             {
-                Console.WriteLine("User reconnects " + Context.ConnectionId);
+                Console.WriteLine("User reconnects {0}", Context.ConnectionId);
                 return base.OnReconnected();                
             }
         }
