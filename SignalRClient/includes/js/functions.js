@@ -2,6 +2,10 @@
 $.connection.hub.url = "http://localhost:8080/signalr";
 // Declare a proxy to reference the hub.
 var chatHubConnection = $.connection.myHub;
+// Id of the selected user
+var selectedUser = null;
+// Waarom weet niemand
+var selectedMessages = null;
 
 // User login event
 $('#loginUser').on('click', function() {
@@ -12,13 +16,19 @@ $('#loginUser').on('click', function() {
 // Send message event
 $('#sendMessage').on('click', function () {
     var msg = $('#secretMessage').val();
-    var toId = 'unknown';
-    chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), toId, msg);
+    var rcptId = selectedUser;
+    chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), rcptId, msg);
+    addMessageToList(msg);
+
+    // Clear the input
+    $('#secretMessage').val('');
 });
 
 // Select a user event
 $(document).on('click', '.user', function () {
     console.log($(this).find('h5').attr('id'));
+    selectedUser = $(this).find('h5').attr('id');
+    $('.chatTab').text($(this).find('h5').text());
 });
 
 // Receive new online user event
@@ -44,6 +54,8 @@ chatHubConnection.client.getAllOnlineUsers = function (users) {
 chatHubConnection.client.getNewMessage = function (sender, message) {
     console.log(sender);
     console.log(message);
+
+    addMessageToList(message);
 };
 
 // Receive disconnected user event
@@ -74,8 +86,9 @@ function addUserToOnlineUserList(id, username) {
     }
 }
 
+// Add the new message to the chatbox
 function addMessageToList(message) {
-    $().append(
+    $('.chatbody > .media-list').append(
         "<li class=\"media\"> \
             <div class=\"media-body\"> \
                 <div class=\"media\"> \
@@ -83,7 +96,7 @@ function addMessageToList(message) {
                         <img class=\"media-object img-circle \" src=\"includes/images/Man.png\" /> \
                     </a> \
                     <div class=\"media-body\"> \
-                        + message + \
+                        " + message + " \
                         <hr /> \
                     </div> \
                 </div> \
@@ -91,6 +104,7 @@ function addMessageToList(message) {
         </li>"
     );
 }
+
 function login(username) {
     // Start connection
     $.connection.hub.start().done(function () {
