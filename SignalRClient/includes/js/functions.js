@@ -177,7 +177,7 @@ function login(username) {
     // Hide login
     $("#login").hide();
     // Show home
-    $("#home").show();
+    $("#home").fadeIn();
 
     /* Setup OTR */
     // Check if there is a DSA key available
