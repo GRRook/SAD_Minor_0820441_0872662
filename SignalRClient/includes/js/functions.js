@@ -6,7 +6,7 @@ var chatHubConnection = $.connection.myHub;
 var selectedUser = null;
 // Waarom weet niemand
 var selectedMessages = null;
-//
+// Global interval
 var interval = null;
 
 // User login event
@@ -15,10 +15,11 @@ $('#loginUser').on('click', function() {
     login($('#username').val());
 });
 
-$('#secretMessage').on('click', function () {
-
+$("#secretMessage").keyup(function (event) {
+    if (event.keyCode == 13) {
+        $("#sendMessage").click();
+    }
 });
-
 // Send message event
 $('#sendMessage').on('click', function () {
     // Only send the message if a user is selected
@@ -39,7 +40,7 @@ $('#sendMessage').on('click', function () {
 // Select a user event
 $(document).on('click', '.user', function () {
     var userElement = $(this).find('h5');
-    console.log(userElement.attr('id'));
+
     selectedUser = userElement.attr('id');
 
     // Set the selected username on top
@@ -54,6 +55,8 @@ $(document).on('click', '.user', function () {
 
     // Cancel the interval timer
     clearInterval(interval);
+    // Remove the blinking class
+    $(userElement).closest('.onlineUsers .user').removeClass('alert-danger');
 });
 
 // Receive new online user event
@@ -86,8 +89,7 @@ chatHubConnection.client.getNewMessage = function (sender, message) {
     {
         interval = setInterval(function () {
             $('#' + sender).closest('.onlineUsers .user').toggleClass('alert-danger');
-            console.log('alert danger');
-        }, 1000);
+        }, 750);
     }
 };
 
