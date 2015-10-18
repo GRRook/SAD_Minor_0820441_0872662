@@ -66,7 +66,6 @@
     <Reference Include="System.EnterpriseServices" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="login.html" />
     <Content Include="includes\js\functions.js" />
     <Content Include="includes\js\OTR\.gitignore" />
     <Content Include="includes\js\OTR\build\dep\bigint.js" />

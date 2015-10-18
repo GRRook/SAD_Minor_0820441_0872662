@@ -174,6 +174,11 @@ function login(username) {
         chatHubConnection.server.login(username);
     });
 
+    // Hide login
+    $("#login").hide();
+    // Show home
+    $("#home").show();
+
     /* Setup OTR */
     // Check if there is a DSA key available
     var myKey = localStorage.getItem("DSA");
@@ -182,6 +187,7 @@ function login(username) {
         myKey = new DSA();
         localStorage.setItem("DSA", myKey);
     }
+
 }
 
 //function startConversation() {
