@@ -15,6 +15,10 @@ $('#loginUser').on('click', function() {
     login($('#username').val());
 });
 
+$('#secretMessage').on('click', function () {
+
+});
+
 // Send message event
 $('#sendMessage').on('click', function () {
     // Only send the message if a user is selected
