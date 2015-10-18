@@ -4,15 +4,20 @@ $.connection.hub.url = "http://localhost:8080/signalr";
 var chatHubConnection = $.connection.myHub;
 // Id of the selected user
 var selectedUser = null;
-// Waarom weet niemand
-var selectedMessages = null;
+// All messages
+var messages = [];
 // Global interval
 var interval = null;
 
 // User login event
 $('#loginUser').on('click', function() {
     // User the entered username
-    login($('#username').val());
+    if ($("#username").val() == "") {
+        alert("Fill in a name..");
+    } else {
+        login($('#username').val());
+    }
+    
 });
 
 $("#secretMessage").keyup(function (event) {
@@ -22,6 +27,7 @@ $("#secretMessage").keyup(function (event) {
 });
 // Send message event
 $('#sendMessage').on('click', function () {
+
     // Only send the message if a user is selected
     if (selectedUser != null) {
         // Get the messege
@@ -31,7 +37,9 @@ $('#sendMessage').on('click', function () {
         // Send the message
         chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), rcptId, msg);
         // Show the message in the chatbox
-        addMessageToList(msg);
+        addMessageToList(sessionStorage.getItem("connectionID"), msg);
+        // Add message to global messsage variable
+        addMessage(sessionStorage.getItem("connectionID"), rcptId, msg);
         // Clear the input
         $('#secretMessage').val('');
     }
@@ -43,6 +51,18 @@ $(document).on('click', '.user', function () {
 
     selectedUser = userElement.attr('id');
 
+    console.log(messages);
+
+    // Clear message list
+    $(".messages").remove();
+
+    // Loop trough all messages and add message to list
+    for (var i = 0; i < messages.length; i++) {
+        if (messages[i].sender == selectedUser || messages[i].receiver == selectedUser) {
+            addMessageToList(messages[i].sender, messages[i].message);
+        }
+    }
+    
     // Set the selected username on top
     $('.chatTab').text(userElement.text());
 
@@ -80,10 +100,13 @@ chatHubConnection.client.getAllOnlineUsers = function (users) {
 
 // Receive new message event
 chatHubConnection.client.getNewMessage = function (sender, message) {
+    // Add message to global messsage variable
+    addMessage(sender, sessionStorage.getItem("connectionID"), message);
+
     // If the sender is the selected user
     if (selectedUser == sender) {
         // Add message to the chatbox
-        addMessageToList(message);
+        addMessageToList(sender, message);
     }
     else
     {
@@ -120,10 +143,16 @@ function addUserToOnlineUserList(id, username) {
     }
 }
 
+// Add message to global message variable
+function addMessage(sender, receiver, message) {
+    var msg = { "sender": sender, "receiver": receiver, "message": message };
+    messages.push(msg);
+}
+
 // Add the new message to the chatbox
-function addMessageToList(message) {
+function addMessageToList(sender, message) {
     $('.chatbody > .media-list').append(
-        "<li class=\"media\"> \
+        "<li class=\"media messages\"> \
             <div class=\"media-body\"> \
                 <div class=\"media\"> \
                     <a class=\"pull-left\"> \
