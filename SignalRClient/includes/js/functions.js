@@ -4,10 +4,6 @@ $.connection.hub.url = "http://localhost:8080/signalr";
 var chatHubConnection = $.connection.myHub;
 // Id of the selected user
 var selectedUser = null;
-// All messages
-var messages = [];
-// Global interval
-var interval = null;
 
 // The contacts arry contains all buddies
 var contact = [];
@@ -48,7 +44,7 @@ $('#sendMessage').on('click', function () {
         // Show the message in the chatbox
         addMessageToList(sessionStorage.getItem("connectionID"), msg);
         // Add message to global messsage variable
-        addMessage(sessionStorage.getItem("connectionID"), selectedUser.id, msg);
+        selectedUser.messages.push({"sender":sessionStorage.getItem("connectionID"), "receiver": selectedUser.id, "message": msg});
         // Clear the input
         $('#secretMessage').val('');
     }
@@ -99,7 +95,6 @@ $(document).on('click', '.user', function () {
             }
         }
     }
-
     // Cancel the interval timer
     clearInterval(selectedUser.interval);
     // Remove the blinking class
@@ -150,12 +145,6 @@ chatHubConnection.client.getDisconnectedUser = function (id) {
     // Remove the disconnected user form the contact array
     contact.splice(contact.indexOf(contact.id == id));
 };
-
-// Add message to global message variable
-function addMessage(sender, receiver, message) {
-    var msg = { "sender": sender, "receiver": receiver, "message": message };
-    messages.push(msg);
-}
 
 // Login
 function login(username) {
@@ -229,12 +218,14 @@ function findBuddyInContacts(buddyId) {
 
 // Init a new buddy object
 function initBuddy(buddyId) {
+    // provide options
+    var options = { fragment_size: 140, send_interval: 200, priv: localStorage.getItem("DSA") };
     // Init the connection
     var newOtr = new OTR();
     // Receive message event
     newOtr.on('ui', function (msg, encrypted, meta) {
         console.log("message to display to the user: " + msg);
-        console.log("(optional) with receiveMsg attached meta data: " + meta)
+        //console.log("(optional) with receiveMsg attached meta data: " + meta)
         // encrypted === true, if the received msg was encrypted
 
         // If the message is not empty
@@ -250,8 +241,8 @@ function initBuddy(buddyId) {
             // If the sender is the selected user
             if (selectedUser == null || selectedUser.id != senderId) {
                 // Set the blinking interval
-                if (this.interval == null) {
-                    this.interval = setInterval(function () {
+                if (buddy.interval == null) {
+                    buddy.interval = setInterval(function () {
                         $('#' + senderId).closest('.onlineUsers .user').toggleClass('alert-danger');
                     }, 750);
                 }
@@ -297,9 +288,6 @@ function initBuddy(buddyId) {
 //        , priv: localStorage.getItem("DSA")
 //    }
 
-//    /*For each user you're communicating with, instantiate an OTR object.*/
-//    // How do we do that?
-
 //    var buddy = new OTR(options)
 
 //    buddy.on('ui', function (msg, encrypted, meta) {
@@ -317,15 +305,6 @@ function initBuddy(buddyId) {
 //        if (severity === 'error')  // either 'error' or 'warn'
 //            console.error("error occurred: " + err)
 //    })
-//}
-
-//function sendMessage(msg) {
-//    buddy.REQUIRE_ENCRYPTION = true;
-//    buddy.sendMsg(msg);
-//}
-
-//function receiveMessage(msg) {
-//    return buddy.receiveMsg(msg);
 //}
 
 //function endConversation() {
