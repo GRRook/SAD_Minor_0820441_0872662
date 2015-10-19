@@ -82,15 +82,8 @@ $(document).on('click', '.user', function () {
     // Clear message list
     $(".messages").remove();
 
-    // Search for the selected user in the connections
-    if (contact.length > 0) {
-        // Set the selected user
-        for (var i = 0; i < contact.length; i++) {
-            if (contact[i].id == selectedUserId) {
-                selectedUser = contact[i];
-            }
-        }
-    }
+    // find the buddy that's selected
+    selectedUser = findBuddyInContacts(selectedUserId)
 
     // If there is no connection with the selected user
     if (selectedUser == null) {
@@ -131,34 +124,23 @@ chatHubConnection.client.getAllOnlineUsers = function (users) {
 };
 
 // Receive new message event
-chatHubConnection.client.getNewMessage = function (sender, message) {
-    var sendingUser = null;
+chatHubConnection.client.getNewMessage = function (senderId, message) {
+    var sendingBuddy = null;
     // Find the sending user in the contact array
     for (var i = 0; i < contact.length; i++) {
-        if (contact[i].id == sender) {
-            sendingUser = contact[i];
+        if (contact[i].id == senderId) {
+            sendingBuddy = contact[i];
         }
     }
     
     // Add the sender to the contact if he's not a contact already
-    if (sendingUser == null)
+    if (sendingBuddy == null)
     {
-        sendingUser = initBuddy(sender);
+        sendingBuddy = initBuddy(senderId);
     }
     
     // Start the receiving of the message
-    sendingUser.otr.receiveMsg(message);
-
-    // Add the incoming message to the users messages
-    //contact[i].messages.push({ "sender": sender, "receiver": sessionStorage.getItem("connectionID"), "message": message })
-
-    if (selectedUser == null || selectedUser.id != sender) {
-        if (sendingUser.interval == null) {
-            sendingUser.interval = setInterval(function () {
-                $('#' + sender).closest('.onlineUsers .user').toggleClass('alert-danger');
-            }, 750);
-        }
-    }
+    sendingBuddy.otr.receiveMsg(message, senderId);
 };
 
 // Receive disconnected user event
@@ -231,25 +213,64 @@ function addMessageToList(sender, message) {
     );
 }
 
+// Find the buddy in the contact array by id
+function findBuddyInContacts(buddyId) {
+    var buddy = null;
+    if (contact.length > 0) {
+        // Set the selected user
+        for (var i = 0; i < contact.length; i++) {
+            if (contact[i].id == buddyId) {
+                buddy = contact[i];
+            }
+        }
+    }
+    return buddy;
+}
+
 // Init a new buddy object
 function initBuddy(buddyId) {
     // Init the connection
     var newOtr = new OTR();
     // Receive message event
     newOtr.on('ui', function (msg, encrypted, meta) {
-        console.log("message to display to the user: " + msg)
+        console.log("message to display to the user: " + msg);
+        console.log("(optional) with receiveMsg attached meta data: " + meta)
         // encrypted === true, if the received msg was encrypted
-        // this.messages.push({ "sender": sender, "receiver": sessionStorage.getItem("connectionID"), "message": msg })
+
+        // If the message is not empty
+        if (msg != "") {
+            senderId = meta;
+
+            // find the buddy that send the message
+            var buddy = findBuddyInContacts(senderId);
+
+            // Add the message to the messages array
+            buddy.messages.push({ "sender": senderId, "receiver": sessionStorage.getItem("connectionID"), "message": msg })
+
+            // If the sender is the selected user
+            if (selectedUser == null || selectedUser.id != senderId) {
+                // Set the blinking interval
+                if (this.interval == null) {
+                    this.interval = setInterval(function () {
+                        $('#' + senderId).closest('.onlineUsers .user').toggleClass('alert-danger');
+                    }, 750);
+                }
+            }
+            else {
+                // Add the message to the chatbox
+                addMessageToList(senderId, msg);
+            }
+        }
     })
     // Send message event
     newOtr.on('io', function (msg, meta) {
-        console.log("message to send to buddy: " + msg)        
+        console.log("message to send to buddy: " + msg);
         chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), buddyId, msg);
     })
     // Error event
     newOtr.on('error', function (err, severity) {
         if (severity === 'error')  // either 'error' or 'warn'
-            console.error("error occurred: " + err)
+            console.error("error occurred: " + err);
     })
     // Init the OTR connection
     newOtr.sendQueryMsg();
