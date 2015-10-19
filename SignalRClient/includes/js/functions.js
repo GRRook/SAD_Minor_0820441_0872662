@@ -65,6 +65,13 @@ $(document).on('click', '.user', function () {
     var userElement = $(this).find('h5');
     selectedUserId = userElement.attr('id');
 
+    var stateIndicator = $(this).find('i.fa');
+    // If the channel is not secure
+    if (!stateIndicator.hasClass('fa-lock')) {
+        // Set the spinner
+        stateIndicator.addClass("fa-spinner fa-pulse")
+    }
+
     // Set the selected username on top
     $('.chatTab').text(userElement.text());
 
@@ -168,40 +175,6 @@ function login(username) {
     }
 }
 
-// Add user to online users list
-function addUserToOnlineUserList(id, username) {
-    if (id != sessionStorage.getItem("connectionID")) {
-        $('.onlineUsers .panel-body > .media-list').append(
-            "<li class=\"media user alert alert-info\"> \
-                <div class=\"media-body\"> \
-                    <div class=\"media\"> \
-                        <div class=\"media-body\"> \
-                            <h5 id=\"" + id + "\"> " + username + " </h5> \
-                            <small class=\"text-muted\">Man</small> \
-                        </div> \
-                    </div> \
-                </div> \
-            </li>"
-        );
-    }
-}
-
-// Add the new message to the chatbox
-function addMessageToList(sender, message) {
-    $('.chatbody > .media-list').append(
-        "<li class=\"media messages\"> \
-            <div class=\"media-body\"> \
-                <div class=\"media\"> \
-                    <div class=\"media-body\"> \
-                        " + message + " \
-                        <hr /> \
-                    </div> \
-                </div> \
-            </div> \
-        </li>"
-    );
-}
-
 // Find the buddy in the contact array by id
 function findBuddyInContacts(buddyId) {
     var buddy = null;
@@ -252,17 +225,40 @@ function initBuddy(buddyId) {
                 addMessageToList(senderId, msg);
             }
         }
-    })
+    });
     // Send message event
     newOtr.on('io', function (msg, meta) {
         console.log("message to send to buddy: " + msg);
         chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), buddyId, msg);
-    })
+    });
     // Error event
     newOtr.on('error', function (err, severity) {
         if (severity === 'error')  // either 'error' or 'warn'
             console.error("error occurred: " + err);
-    })
+    });
+    // Status event
+    newOtr.on('status', function (state) {
+        switch (state) {
+            case OTR.CONST.STATUS_AKE_SUCCESS:
+                // sucessfully ake'd with buddy
+                // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
+                if (newOtr.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED) {
+                    // show that the negotiation succeded and that the channel is secure
+                    // Find the users online indicator
+                    var userElement = $('#' + buddyId).siblings('i');
+                    // Indicate that the line is secure
+                    userElement.removeClass("fa-spinner fa-pulse").addClass("fa-lock");;
+                    // Change color to success
+                    userElement.closest("li").removeClass('alert-info').addClass('alert-success');
+                }
+                break
+            case OTR.CONST.STATUS_END_OTR:
+                // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
+                // inform the user that his correspondent has closed his end
+                // of the private connection and the user should do the same
+                break
+        }
+    });
     // Init the OTR connection
     newOtr.sendQueryMsg();
 
@@ -278,6 +274,41 @@ function initBuddy(buddyId) {
     contact.push(buddy);
 
     return buddy;
+}
+
+// Add user to online users list
+function addUserToOnlineUserList(id, username) {
+    if (id != sessionStorage.getItem("connectionID")) {
+        $('.onlineUsers .panel-body > .media-list').append(
+            "<li class=\"media user alert alert-info\"> \
+                <div class=\"media-body\"> \
+                    <div class=\"media\"> \
+                        <div class=\"media-body\"> \
+                            <h5 id=\"" + id + "\"> " + username + " </h5> \
+                            <small class=\"text-muted\">Man</small> \
+                            <i class=\"fa fa-x2\"></i> \
+                        </div> \
+                    </div> \
+                </div> \
+            </li>"
+        );
+    }
+}
+
+// Add the new message to the chatbox
+function addMessageToList(sender, message) {
+    $('.chatbody > .media-list').append(
+        "<li class=\"media messages\"> \
+            <div class=\"media-body\"> \
+                <div class=\"media\"> \
+                    <div class=\"media-body\"> \
+                        " + message + " \
+                        <hr /> \
+                    </div> \
+                </div> \
+            </div> \
+        </li>"
+    );
 }
 
 //function startConversation() {

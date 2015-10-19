@@ -28,3 +28,14 @@
 .row{
     margin:15px -15px;
 }
+
+.media-body{
+    position:relative;
+}
+
+.media-body > i.fa {
+    font-size:18px;
+    position:absolute;
+    top:0;
+    right:0;
+}
