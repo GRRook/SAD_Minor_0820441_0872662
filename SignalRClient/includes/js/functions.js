@@ -89,50 +89,7 @@ $(document).on('click', '.user', function () {
     }
     else
     {
-        // Init the connection
-        var newOtr = new OTR();
-        // Receive message event
-        newOtr.on('ui', function (msg, encrypted, meta) {
-            console.log("message to display to the user: " + msg)
-            // encrypted === true, if the received msg was encrypted
-            console.log("(optional) with receiveMsg attached meta data: " + meta)
-            // Add message to global messsage variable
-            addMessage(sender, sessionStorage.getItem("connectionID"), msg);
-
-            // If the sender is the selected user
-            if (selectedUser != null && selectedUser.id == sender) {
-                // Add message to the chatbox
-                addMessageToList(sender, msg);
-            }
-            else {
-                interval = setInterval(function () {
-                    $('#' + sender).closest('.onlineUsers .user').toggleClass('alert-danger');
-                }, 750);
-            }
-        })
-        // Send message event
-        newOtr.on('io', function (msg, meta) {
-            //console.log("message to send to buddy: " + msg)
-            //console.log("(optional) with sendMsg attached meta data: " + meta)
-            console.log(msg);
-            chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), selectedUserId, msg);
-        })
-        // Error event
-        newOtr.on('error', function (err, severity) {
-            if (severity === 'error')  // either 'error' or 'warn'
-                console.error("error occurred: " + err)
-        })
-
-        newOtr.sendQueryMsg();
-
-        // Create a new buddy object
-        var buddy = {
-            id: selectedUserId,
-            otr: newOtr
-        };
-
-        // Add the buddy to the list of contacts
-        contact.push(buddy);
+        initBuddy();
     }
 
     // Set the selected user
@@ -162,15 +119,19 @@ chatHubConnection.client.getAllOnlineUsers = function (users) {
 
 // Receive new message event
 chatHubConnection.client.getNewMessage = function (sender, message) {
-    
-    //// Add message to global messsage variable
-    //addMessage(sender, sessionStorage.getItem("connectionID"), message);
 
-    //// If the sender is the selected user
+    // Find the sender in the contacts
+    for (var i = 0; i < contact.length; i++) {
+        if (contact[i].id == sender) {
+
+        }
+    }
+
+    // Add the incoming message to the users messages
+    //contact[i].messages.push({ "sender": sender, "receiver": sessionStorage.getItem("connectionID"), "message": message })
+
     if (selectedUser != null && selectedUser.id == sender) {
-    //    // Add message to the chatbox
-        //    addMessageToList(sender, message);
-        selectedUser.otr.receiveMsg(message);
+        //selectedUser.otr.receiveMsg(message);
     }
     else
     {
@@ -267,6 +228,40 @@ function sendMessage() {
 
 function receiveMessage() {
 
+}
+
+function initBuddy() {
+    // Init the connection
+    var newOtr = new OTR();
+    // Receive message event
+    newOtr.on('ui', function (msg, encrypted, meta) {
+        console.log("message to display to the user: " + msg)
+        // encrypted === true, if the received msg was encrypted
+        console.log("(optional) with receiveMsg attached meta data: " + meta)
+    })
+    // Send message event
+    newOtr.on('io', function (msg, meta) {
+        //console.log("message to send to buddy: " + msg)
+        //console.log("(optional) with sendMsg attached meta data: " + meta)
+        console.log(msg);
+        chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), selectedUserId, msg);
+    })
+    // Error event
+    newOtr.on('error', function (err, severity) {
+        if (severity === 'error')  // either 'error' or 'warn'
+            console.error("error occurred: " + err)
+    })
+    // Init the OTR connection
+    newOtr.sendQueryMsg();
+
+    // Create a new buddy object
+    var buddy = {
+        id: selectedUserId,
+        otr: newOtr
+    };
+
+    // Add the buddy to the list of contacts
+    contact.push(buddy);
 }
 
 //function startConversation() {
