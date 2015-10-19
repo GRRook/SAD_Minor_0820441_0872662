@@ -39,7 +39,18 @@ $('#username').keyup(function (e) {
 $('#sendMessage').on('click', function () {
     // Only send the message if a user is selected
     if (selectedUser != null) {
-        sendMessage();
+        // Get the messege
+        var msg = $('#secretMessage').val();
+        // Enforce encryption
+        selectedUser.otr.REQUIRE_ENCRYPTION = true;
+        // Send the message
+        selectedUser.otr.sendMsg(msg);
+        // Show the message in the chatbox
+        addMessageToList(sessionStorage.getItem("connectionID"), msg);
+        // Add message to global messsage variable
+        addMessage(sessionStorage.getItem("connectionID"), selectedUser.id, msg);
+        // Clear the input
+        $('#secretMessage').val('');
     }
 });
 // Send message key event handler
@@ -51,6 +62,10 @@ $("#secretMessage").keyup(function (e) {
 
 // Select a user event
 $(document).on('click', '.user', function () {
+    // Reset the selecte user global
+    selectedUser = null;
+
+    // Get the ID of the currently selected user
     var userElement = $(this).find('h5');
     selectedUserId = userElement.attr('id');
 
@@ -64,40 +79,38 @@ $(document).on('click', '.user', function () {
         sendButton.removeClass('btn-default').addClass('btn-success');
     }
 
-    // Cancel the interval timer
-    clearInterval(interval);
-    // Remove the blinking class
-    $(userElement).closest('.onlineUsers .user').removeClass('alert-danger');
+    // Clear message list
+    $(".messages").remove();
 
-    // Search for the selected user
-    var isConnected = false;
+    // Search for the selected user in the connections
     if (contact.length > 0) {
-        isConnected = $.grep(contact, function (e) { return (e.id == selectedUserId); });
-    }
-
-    // If we're already connected to the selected user
-    if (isConnected) {
-        // Clear message list
-        $(".messages").remove();
-
-        // Loop trough all messages and add message to list
-        for (var i = 0; i < messages.length; i++) {
-            if (messages[i].sender == selectedUserId || messages[i].receiver == selectedUserId) {
-                addMessageToList(messages[i].sender, messages[i].message);
+        // Set the selected user
+        for (var i = 0; i < contact.length; i++) {
+            if (contact[i].id == selectedUserId) {
+                selectedUser = contact[i];
             }
         }
     }
-    else
-    {
-        initBuddy();
+
+    // If there is no connection with the selected user
+    if (selectedUser == null) {
+        // Init the connection
+        selectedUser = initBuddy(selectedUserId);
     }
 
-    // Set the selected user
-    for (var i = 0; i < contact.length; i++) {
-        if (contact[i].id == selectedUserId) {
-            selectedUser = contact[i];
+    // Loop trough all messages and add message to list
+    if (selectedUser.messages != null && selectedUser.messages.length > 0) {
+        for (var i = 0; i < selectedUser.messages.length; i++) {
+            if (selectedUser.messages[i].sender == selectedUserId || selectedUser.messages[i].receiver == selectedUserId) {
+                addMessageToList(selectedUser.messages[i].sender, selectedUser.messages[i].message);
+            }
         }
     }
+
+    // Cancel the interval timer
+    clearInterval(selectedUser.interval);
+    // Remove the blinking class
+    $(userElement).closest('.onlineUsers .user').removeClass('alert-danger');
 });
 
 // Receive new online user event
@@ -119,25 +132,32 @@ chatHubConnection.client.getAllOnlineUsers = function (users) {
 
 // Receive new message event
 chatHubConnection.client.getNewMessage = function (sender, message) {
-
-    // Find the sender in the contacts
+    var sendingUser = null;
+    // Find the sending user in the contact array
     for (var i = 0; i < contact.length; i++) {
         if (contact[i].id == sender) {
-
+            sendingUser = contact[i];
         }
     }
+    
+    // Add the sender to the contact if he's not a contact already
+    if (sendingUser == null)
+    {
+        sendingUser = initBuddy(sender);
+    }
+    
+    // Start the receiving of the message
+    sendingUser.otr.receiveMsg(message);
 
     // Add the incoming message to the users messages
     //contact[i].messages.push({ "sender": sender, "receiver": sessionStorage.getItem("connectionID"), "message": message })
 
-    if (selectedUser != null && selectedUser.id == sender) {
-        //selectedUser.otr.receiveMsg(message);
-    }
-    else
-    {
-        interval = setInterval(function () {
-            $('#' + sender).closest('.onlineUsers .user').toggleClass('alert-danger');
-        }, 750);
+    if (selectedUser == null || selectedUser.id != sender) {
+        if (sendingUser.interval == null) {
+            sendingUser.interval = setInterval(function () {
+                $('#' + sender).closest('.onlineUsers .user').toggleClass('alert-danger');
+            }, 750);
+        }
     }
 };
 
@@ -211,40 +231,20 @@ function addMessageToList(sender, message) {
     );
 }
 
-function sendMessage() {
-    // Get the messege
-    var msg = $('#secretMessage').val();
-    // Enforce encryption
-    selectedUser.otr.REQUIRE_ENCRYPTION = true;
-    // Send the message
-    selectedUser.otr.sendMsg(msg);
-    // Show the message in the chatbox
-    addMessageToList(sessionStorage.getItem("connectionID"), msg);
-    // Add message to global messsage variable
-    addMessage(sessionStorage.getItem("connectionID"), selectedUser.id, msg);
-    // Clear the input
-    $('#secretMessage').val('');
-}
-
-function receiveMessage() {
-
-}
-
-function initBuddy() {
+// Init a new buddy object
+function initBuddy(buddyId) {
     // Init the connection
     var newOtr = new OTR();
     // Receive message event
     newOtr.on('ui', function (msg, encrypted, meta) {
         console.log("message to display to the user: " + msg)
         // encrypted === true, if the received msg was encrypted
-        console.log("(optional) with receiveMsg attached meta data: " + meta)
+        // this.messages.push({ "sender": sender, "receiver": sessionStorage.getItem("connectionID"), "message": msg })
     })
     // Send message event
     newOtr.on('io', function (msg, meta) {
-        //console.log("message to send to buddy: " + msg)
-        //console.log("(optional) with sendMsg attached meta data: " + meta)
-        console.log(msg);
-        chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), selectedUserId, msg);
+        console.log("message to send to buddy: " + msg)        
+        chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), buddyId, msg);
     })
     // Error event
     newOtr.on('error', function (err, severity) {
@@ -256,12 +256,16 @@ function initBuddy() {
 
     // Create a new buddy object
     var buddy = {
-        id: selectedUserId,
-        otr: newOtr
+        id:buddyId,
+        otr:newOtr,
+        interval:null,
+        messages:[]
     };
 
     // Add the buddy to the list of contacts
     contact.push(buddy);
+
+    return buddy;
 }
 
 //function startConversation() {
