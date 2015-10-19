@@ -70,10 +70,7 @@ $(document).on('click', '.user', function () {
     $(userElement).closest('.onlineUsers .user').removeClass('alert-danger');
 
     // Search for the selected user
-    var isConnected = false;
-    if (contact.length > 0) {
-        isConnected = $.grep(contact, function (e) { return (e.id == selectedUserId); });
-    }
+    var isConnected = $.grep(contact, function(e){ return e.id == id; });
 
     // If we're already connected to the selected user
     if (isConnected) {
@@ -96,25 +93,11 @@ $(document).on('click', '.user', function () {
             console.log("message to display to the user: " + msg)
             // encrypted === true, if the received msg was encrypted
             console.log("(optional) with receiveMsg attached meta data: " + meta)
-            // Add message to global messsage variable
-            addMessage(sender, sessionStorage.getItem("connectionID"), msg);
-
-            // If the sender is the selected user
-            if (selectedUser != null && selectedUser.id == sender) {
-                // Add message to the chatbox
-                addMessageToList(sender, msg);
-            }
-            else {
-                interval = setInterval(function () {
-                    $('#' + sender).closest('.onlineUsers .user').toggleClass('alert-danger');
-                }, 750);
-            }
         })
         // Send message event
         newOtr.on('io', function (msg, meta) {
-            //console.log("message to send to buddy: " + msg)
-            //console.log("(optional) with sendMsg attached meta data: " + meta)
-            console.log(msg);
+            console.log("message to send to buddy: " + msg)
+            console.log("(optional) with sendMsg attached meta data: " + meta)
             chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), selectedUserId, msg);
         })
         // Error event
@@ -122,8 +105,6 @@ $(document).on('click', '.user', function () {
             if (severity === 'error')  // either 'error' or 'warn'
                 console.error("error occurred: " + err)
         })
-
-        newOtr.sendQueryMsg();
 
         // Create a new buddy object
         var buddy = {
@@ -135,12 +116,11 @@ $(document).on('click', '.user', function () {
         contact.push(buddy);
     }
 
-    // Set the selected user
-    for (var i = 0; i < contact.length; i++) {
-        if (contact[i].id == selectedUserId) {
-            selectedUser = contact[i];
-        }
-    }
+    selectedUser = $.grep(contact, function (e) {
+        if (e.id == id) {
+            return e;
+        };
+    });
 });
 
 // Receive new online user event
@@ -162,15 +142,13 @@ chatHubConnection.client.getAllOnlineUsers = function (users) {
 
 // Receive new message event
 chatHubConnection.client.getNewMessage = function (sender, message) {
-    
-    //// Add message to global messsage variable
-    //addMessage(sender, sessionStorage.getItem("connectionID"), message);
+    // Add message to global messsage variable
+    addMessage(sender, sessionStorage.getItem("connectionID"), message);
 
-    //// If the sender is the selected user
-    if (selectedUser != null && selectedUser.id == sender) {
-    //    // Add message to the chatbox
-        //    addMessageToList(sender, message);
-        selectedUser.otr.receiveMsg(message);
+    // If the sender is the selected user
+    if (selectedUser == sender) {
+        // Add message to the chatbox
+        addMessageToList(sender, message);
     }
     else
     {
@@ -253,14 +231,14 @@ function addMessageToList(sender, message) {
 function sendMessage() {
     // Get the messege
     var msg = $('#secretMessage').val();
-    // Enforce encryption
-    selectedUser.otr.REQUIRE_ENCRYPTION = true;
+    // Get the recipient
+    var rcptId = selectedUser;
     // Send the message
     selectedUser.otr.sendMsg(msg);
     // Show the message in the chatbox
     addMessageToList(sessionStorage.getItem("connectionID"), msg);
     // Add message to global messsage variable
-    addMessage(sessionStorage.getItem("connectionID"), selectedUser.id, msg);
+    addMessage(sessionStorage.getItem("connectionID"), rcptId, msg);
     // Clear the input
     $('#secretMessage').val('');
 }
