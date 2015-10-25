@@ -39,3 +39,7 @@
     top:0;
     right:0;
 }
+
+a {
+   outline: 0;
+}

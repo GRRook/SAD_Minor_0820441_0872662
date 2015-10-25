@@ -15,6 +15,9 @@ var contact = [];
  * buddy.messages = [];
  */
 
+// Multi user array for mp-OTR
+var multiUserChat = [];
+
 // User login event
 $('#loginUser').on('click', function() {
     // Use the entered username
@@ -311,6 +314,32 @@ function addMessageToList(sender, message) {
     );
 }
 
+// Change the current behavior of the checkboxes and start multi user chat
+$('.dropdown-menu a').on('click', function (event) {
+    var $target = $(event.currentTarget),
+        val = $target.attr('data-value'),
+        $inp = $target.find('input'),
+        idx;
+    
+    //Pushes and splices user from and to multiUserChat array
+    if (val != undefined) {
+        if ((idx = multiUserChat.indexOf(val)) > -1) {
+            multiUserChat.splice(idx, 1);
+            setTimeout(function () { $inp.prop('checked', false) }, 0);
+        } else {
+            multiUserChat.push(val);
+            setTimeout(function () { $inp.prop('checked', true) }, 0);
+        }
+
+        $(event.target).blur();
+
+        console.log(multiUserChat);
+        return false;
+    } else {
+        // When start multi user chat is clicked..
+        console.log("Start multi chat!");
+    }
+});
 
 //function startConversation() {
 //    // provide options
