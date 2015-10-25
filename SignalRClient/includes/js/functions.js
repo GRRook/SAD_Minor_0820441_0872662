@@ -311,6 +311,7 @@ function addMessageToList(sender, message) {
     );
 }
 
+
 //function startConversation() {
 //    // provide options
 //    var options = {
