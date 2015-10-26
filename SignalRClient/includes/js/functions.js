@@ -329,6 +329,7 @@ function addUserToOnlineUserList(id, username) {
     }
 }
 
+// Click on social millionaire protocol
 $(document).on('click', '.social', function (event) {
 
     var secret = "ghostbusters";
