@@ -98,6 +98,61 @@
             <!-- End of online users -->
         </div>
     </div>
+
+    <!-- Modal Invite SMP-->
+    <div id="myModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Socialist Millionaire Protocol</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Your question: </p>
+                    <input type="text" id="smpQuestion" />
+                </div>
+                <div class="modal-body">
+                    <p>Your secret: </p>
+                    <input type="text" id="smpSecret" />
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="smpQuestionSubmit" data-dismiss="modal">Submit</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Submit Secret -->
+    <div id="answerSecret" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title">Socialist Millionaire Protocol</h4>
+                </div>
+                <div class="modal-body">
+                    <p id="smpQuestionA"></p>
+                </div>
+                <div class="modal-body">
+                    <p>Fill in requested secret </p>
+                    <input type="text" id="smpSecretA" />
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="smpAnswerSubmit" data-dismiss="modal">Submit</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
 </body>
 </html>
 

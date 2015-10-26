@@ -4,6 +4,8 @@ $.connection.hub.url = "http://localhost:8080/signalr";
 var chatHubConnection = $.connection.myHub;
 // Id of the selected user
 var selectedUser = null;
+// Global buddyId
+var budId;
 
 // The contacts arry contains all buddies
 var contact = [];
@@ -195,6 +197,7 @@ function findBuddyInContacts(buddyId) {
 
 // Init a new buddy object
 function initBuddy(buddyId) {
+    budId = buddyId;
     // provide options
     var options = { fragment_size: 140, send_interval: 200, priv: localStorage.getItem("DSA") };
     // Init the connection
@@ -254,15 +257,17 @@ function initBuddy(buddyId) {
                     // Indicate that the line is secure
                     userElement.removeClass("fa-spinner fa-pulse").addClass("fa-lock");;
                     // Change color to success
-                    userElement.closest("li").removeClass('alert-info').addClass('alert-success');
-                    // Show SMP button
-                    //userElement.parent().next().find(".smp").show();
+                    userElement.closest("li").removeClass('alert-info').addClass('alert-success');                    
                 }
+
+                // Show SMP button (HET SHOWEN WERKT WEL MAAR NIET MET MEERDERE USERS OP DEZE MANIER)
+                $(".social").show();
                 break
             case OTR.CONST.STATUS_END_OTR:
                 // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
                 // inform the user that his correspondent has closed his end
                 // of the private connection and the user should do the same
+                console.log("End OTR");
                 break
         }
     });
@@ -272,22 +277,45 @@ function initBuddy(buddyId) {
     newOtr.on('smp', function (type, data, act) {
         switch (type) {
             case 'question':
-                console.log("question + data: " + data);
+                console.log("question data: " + data);
+                console.log("question act: " + act);
+
+                $("#smpQuestionA").text(data);
+                $('#answerSecret').modal('toggle');
                 // call(data) some function with question?
                 // return the user supplied data to
                 // userA.smpSecret(secret)
                 break
             case 'trust':
-                console.log("trust");
+                console.log("trust data: " + data);
+                console.log("trust act: " + act);
+                if (act == "asked") {
+                    if (data == true) {
+                        $(".social").toggleClass("btn-success");
+                    } else {
+                        $(".social").toggleClass("btn-danger");
+                    }
+                }
+                else if (act == "answered"){
+                    if (data == true) {
+                        $(".social").toggleClass("btn-success");
+                    } else {
+                        //Wrong answer dude
+                    }
+                }
+                
                 // smp completed
                 // check data (true|false) and update ui accordingly
                 // act ("asked"|"answered") provides info one who initiated the smp
                 break
             case 'abort':
                 // smp was aborted. notify the user or update ui
-                console.log("abort");
+                console.log("abort data: " + data);
+                console.log("abort act: " + act);
             default:
-                throw new Error('Unknown type.')
+                throw new Error('Unknown type.');
+                console.log("Error data: " + data);
+                console.log("Error act: " + act);
         }
     });
 
@@ -300,7 +328,7 @@ function initBuddy(buddyId) {
     };
 
     // Add the buddy to the list of contacts
-    contact.push(buddy);
+    contact.push(buddy);   
 
     return buddy;
 }
@@ -318,7 +346,7 @@ function addUserToOnlineUserList(id, username) {
                             <i class=\"fa fa-x2\"></i> \
                         </div> \
                         <div class=\"dropdown pull-right\"> \
-                            <button type=\"button\" class=\"btn btn-default btn-xs social\" style=\"display:none\"> \
+                            <button type=\"button\" id=\"" + id + "\" onClick=\"socialistMP('"+ id + "')\" class=\"btn btn-primary btn-xs social\" style=\"display:none\" data-toggle=\"modal\" data-target=\"#myModal\"> \
                                 <span class=\"glyphicon glyphicon-star\" aria-hidden=\"true\"></span> SMP \
                             </button> \
                         <\div> \
@@ -329,23 +357,32 @@ function addUserToOnlineUserList(id, username) {
     }
 }
 
-// Click on social millionaire protocol
-$(document).on('click', '.social', function (event) {
+// Set the global budId for the socialist millionaire protocol
+function socialistMP(id) {
+    console.log("socialistMP " + id);
+    // Set the global budId
+    budId = id;
+}
 
-    var secret = "ghostbusters";
-    var question = "who are you going to call?";
-    var id = $(this).parent().prev().find("h5").attr("id");
-    console.log(id);
-    var buddy = findBuddyInContacts(id);
-    console.log(buddy.otr);
+// Submit a question on SMP
+$(document).on('click', '#smpQuestionSubmit', function (event) {
+    // Get the secret and question
+    var secret = $("#smpSecret").val();
+    var question = $("#smpQuestion").val();
+    
+    // Find buddy in contacts by id
+    var buddy = findBuddyInContacts(budId);
     buddy.otr.smpSecret(secret, question);
-
-
-    event.stopPropagation();
-    console.log("SMP");
-
     
 });
+
+// Submit an answer on SMP
+$(document).on('click', '#smpAnswerSubmit', function (event) {
+    var buddy = findBuddyInContacts(budId);
+    buddy.otr.smpSecret($("#smpSecretA").val());
+
+});
+
 
 // Add the new message to the chatbox
 function addMessageToList(sender, message) {
