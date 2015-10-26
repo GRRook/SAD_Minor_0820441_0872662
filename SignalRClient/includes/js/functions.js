@@ -176,6 +176,7 @@ function login(username) {
         myKey = new DSA();
         localStorage.setItem("DSA", myKey);
     }
+
 }
 
 // Find the buddy in the contact array by id
@@ -198,6 +199,7 @@ function initBuddy(buddyId) {
     var options = { fragment_size: 140, send_interval: 200, priv: localStorage.getItem("DSA") };
     // Init the connection
     var newOtr = new OTR();
+
     // Receive message event
     newOtr.on('ui', function (msg, encrypted, meta) {
         console.log("message to display to the user: " + msg);
@@ -253,6 +255,8 @@ function initBuddy(buddyId) {
                     userElement.removeClass("fa-spinner fa-pulse").addClass("fa-lock");;
                     // Change color to success
                     userElement.closest("li").removeClass('alert-info').addClass('alert-success');
+                    // Show SMP button
+                    //userElement.parent().next().find(".smp").show();
                 }
                 break
             case OTR.CONST.STATUS_END_OTR:
@@ -264,6 +268,28 @@ function initBuddy(buddyId) {
     });
     // Init the OTR connection
     newOtr.sendQueryMsg();
+    // SMP event
+    newOtr.on('smp', function (type, data, act) {
+        switch (type) {
+            case 'question':
+                console.log("question + data: " + data);
+                // call(data) some function with question?
+                // return the user supplied data to
+                // userA.smpSecret(secret)
+                break
+            case 'trust':
+                console.log("trust");
+                // smp completed
+                // check data (true|false) and update ui accordingly
+                // act ("asked"|"answered") provides info one who initiated the smp
+                break
+            case 'abort':
+                // smp was aborted. notify the user or update ui
+                console.log("abort");
+            default:
+                throw new Error('Unknown type.')
+        }
+    });
 
     // Create a new buddy object
     var buddy = {
@@ -291,12 +317,34 @@ function addUserToOnlineUserList(id, username) {
                             <small class=\"text-muted\">Man</small> \
                             <i class=\"fa fa-x2\"></i> \
                         </div> \
+                        <div class=\"dropdown pull-right\"> \
+                            <button type=\"button\" class=\"btn btn-default btn-xs social\" style=\"display:none\"> \
+                                <span class=\"glyphicon glyphicon-star\" aria-hidden=\"true\"></span> SMP \
+                            </button> \
+                        <\div> \
                     </div> \
                 </div> \
             </li>"
         );
     }
 }
+
+$(document).on('click', '.social', function (event) {
+
+    var secret = "ghostbusters";
+    var question = "who are you going to call?";
+    var id = $(this).parent().prev().find("h5").attr("id");
+    console.log(id);
+    var buddy = findBuddyInContacts(id);
+    console.log(buddy.otr);
+    buddy.otr.smpSecret(secret, question);
+
+
+    event.stopPropagation();
+    console.log("SMP");
+
+    
+});
 
 // Add the new message to the chatbox
 function addMessageToList(sender, message) {
@@ -320,9 +368,12 @@ $('.dropdown-menu a').on('click', function (event) {
         val = $target.attr('data-value'),
         $inp = $target.find('input'),
         idx;
-    
-    //Pushes and splices user from and to multiUserChat array
-    if (val != undefined) {
+
+    // Val is 0 start multi user chat is clicked
+    if (val == 0) {
+        console.log("Start multi chat!");
+    }
+    else if (val != undefined) {
         if ((idx = multiUserChat.indexOf(val)) > -1) {
             multiUserChat.splice(idx, 1);
             setTimeout(function () { $inp.prop('checked', false) }, 0);
@@ -335,11 +386,9 @@ $('.dropdown-menu a').on('click', function (event) {
 
         console.log(multiUserChat);
         return false;
-    } else {
-        // When start multi user chat is clicked..
-        console.log("Start multi chat!");
     }
 });
+
 
 //function startConversation() {
 //    // provide options
