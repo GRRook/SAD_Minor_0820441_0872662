@@ -8,8 +8,6 @@ var chatHubConnection = $.connection.myHub;
 var myDsaKey;
 // Id of the selected user
 var selectedUser = null;
-// Global buddyId
-var budId;
 // Multi user array for mp-OTR
 var multiUserChat = [];
 // The contacts arry contains all buddies
@@ -143,22 +141,36 @@ $(document).on('click', '.user', function () {
     $(userElement).closest('.onlineUsers .user').removeClass('alert-danger');
 });
 
-// Submit a question to the SMP
+// Initiate the SMP event
+$(document).on('click', '.social', function (e) {
+    // Prevent the clickEvent from bubbling
+    e.stopPropagation();
+    // Show the modal
+    $('#askSecret').modal('show');
+    // Pass the ID to the modal
+    $('#askSecret').find('.smpBuddyId').val($(this).siblings('h5').attr('id'));
+});
+
+// Submit a question to the SMP event
 $(document).on('click', '#smpQuestionSubmit', function (event) {
     // Get the secret and question
     var secret = $("#smpSecret").val();
     var question = $("#smpQuestion").val();
 
+    // Retrieve the ID of the user
+    var id = $(this).siblings('.smpBuddyId').val();
+
     // Find buddy in contacts by id
-    var buddy = findBuddyInContacts(budId);
+    var buddy = findBuddyInContacts(id);
     buddy.otr.smpSecret(secret, question);
 });
 
-// Submit an answer to the SMP
+// Submit an answer to the SMP event
 $(document).on('click', '#smpAnswerSubmit', function (event) {
-    var buddy = findBuddyInContacts(budId);
+    // Retrieve the ID of the user
+    var id = $(this).siblings('.smpBuddyId').val();
+    var buddy = findBuddyInContacts(id);
     buddy.otr.smpSecret($("#smpSecretA").val());
-
 });
 
 // Receive new online user event
@@ -263,7 +275,6 @@ function findBuddyInContacts(buddyId) {
 
 // Init a new buddy object
 function initBuddy(buddyId) {
-    budId = buddyId;
     // provide options
     var options = { fragment_size: 140, send_interval: 200, priv: myDsaKey };
     // Init the connection
@@ -314,8 +325,7 @@ function initBuddy(buddyId) {
     newOtr.on('status', function (state) {
         switch (state) {
             case OTR.CONST.STATUS_AKE_SUCCESS:
-                // sucessfully ake'd with buddy
-                // check if buddy.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED
+                // sucessfully ake'd with buddy                
                 if (newOtr.msgstate === OTR.CONST.MSGSTATE_ENCRYPTED) {
                     // show that the negotiation succeded and that the channel is secure
                     // Find the users online indicator
@@ -324,10 +334,9 @@ function initBuddy(buddyId) {
                     userElement.removeClass("fa-spinner fa-pulse").addClass("fa-lock");;
                     // Change color to success
                     userElement.closest("li").removeClass('alert-info').addClass('alert-success');
+                    // Show the SMP button
+                    userElement.siblings("button").show();
                 }
-
-                // Show SMP button (HET SHOWEN WERKT WEL MAAR NIET MET MEERDERE USERS OP DEZE MANIER)
-                $(".social").show();
                 break
             case OTR.CONST.STATUS_END_OTR:
                 // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
@@ -345,26 +354,27 @@ function initBuddy(buddyId) {
                 console.log("question act: " + act);
 
                 $("#smpQuestionA").text(data);
-                $('#answerSecret').modal('toggle');
-                // call(data) some function with question?
-                // return the user supplied data to
-                // userA.smpSecret(secret)
+                $('#answerSecret').modal('show');
+                $('#answerSecret').find('.smpBuddyId').val(buddyId);
                 break
             case 'trust':
                 console.log("trust data: " + data);
                 console.log("trust act: " + act);
+                var id = null;
                 if (act == "asked") {
+                    id = $('#askSecret').find('.smpBuddyId').val();
                     if (data == true) {
-                        $(".social").toggleClass("btn-success");
+                        $("#" + id).siblings('.social').toggleClass("btn-success");
                     } else {
-                        $(".social").toggleClass("btn-danger");
+                        $("#" + id).siblings(".social").toggleClass("btn-danger");
                     }
                 }
-                else if (act == "answered"){
+                else if (act == "answered") {
+                    id = $('#answerSecret').find('.smpBuddyId').val();
                     if (data == true) {
-                        $(".social").toggleClass("btn-success");
+                        $("#" + id).siblings(".social").toggleClass("btn-success");
                     } else {
-                        //Wrong answer dude
+                        $("#" + id).siblings(".social").toggleClass("btn-danger");
                     }
                 }
                 
@@ -410,24 +420,15 @@ function addUserToOnlineUserList(id, username) {
                             <h5 id=\"" + id + "\"> " + username + " </h5> \
                             <small class=\"text-muted\">Man</small> \
                             <i class=\"fa fa-x2\"></i> \
-                        </div> \
-                        <div class=\"dropdown pull-right\"> \
-                            <button type=\"button\" id=\"" + id + "\" onClick=\"socialistMP('"+ id + "')\" class=\"btn btn-primary btn-xs social\" style=\"display:none\" data-toggle=\"modal\" data-target=\"#myModal\"> \
+                            <button type=\"button\" id=\"" + id + "\" class=\"btn btn-primary btn-xs social pull-right\" style=\"display:none\"> \
                                 <span class=\"glyphicon glyphicon-star\" aria-hidden=\"true\"></span> SMP \
                             </button> \
-                        <\div> \
+                        </div> \
                     </div> \
                 </div> \
             </li>"
         );
     }
-}
-
-// Set the global budId for the socialist millionaire protocol
-function socialistMP(id) {
-    console.log("socialistMP " + id);
-    // Set the global budId
-    budId = id;
 }
 
 // Add the new message to the chatbox
