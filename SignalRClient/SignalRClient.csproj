@@ -67,6 +67,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="includes\js\functions.js" />
+    <Content Include="includes\js\initBuddyWorker.js" />
     <Content Include="includes\js\OTR\.gitignore" />
     <Content Include="includes\js\OTR\build\dep\bigint.js" />
     <Content Include="includes\js\OTR\build\dep\crypto.js" />

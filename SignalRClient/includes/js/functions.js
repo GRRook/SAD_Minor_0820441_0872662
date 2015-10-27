@@ -1,22 +1,17 @@
 ﻿// Set the hubs URL for the connection
 $.connection.hub.url = "http://localhost:8080/signalr";
+//$.connection.hub.url = "http://145.24.222.231:8080/signalr";
+
 // Declare a proxy to reference the hub.
 var chatHubConnection = $.connection.myHub;
+// Global DSA object
+var myDsaKey;
 // Id of the selected user
 var selectedUser = null;
-
-// The contacts arry contains all buddies
-var contact = [];
-/* The buddy object
- * 
- * buddy.id = null;
- * buddy.otr = new OTR();
- * buddy.interval = null;
- * buddy.messages = [];
- */
-
 // Multi user array for mp-OTR
 var multiUserChat = [];
+// The contacts array contains all buddies
+var contact = [];
 
 // User login event
 $('#loginUser').on('click', function() {
@@ -59,9 +54,36 @@ $("#secretMessage").keyup(function (e) {
     }
 });
 
+// Change the current behavior of the checkboxes and start multi user chat
+$('.dropdown-menu a').on('click', function (event) {
+    var $target = $(event.currentTarget),
+        val = $target.attr('data-value'),
+        $inp = $target.find('input'),
+        idx;
+
+    //Pushes and splices user from and to multiUserChat array
+    if (val != undefined) {
+        if ((idx = multiUserChat.indexOf(val)) > -1) {
+            multiUserChat.splice(idx, 1);
+            setTimeout(function () { $inp.prop('checked', false) }, 0);
+        } else {
+            multiUserChat.push(val);
+            setTimeout(function () { $inp.prop('checked', true) }, 0);
+        }
+
+        $(event.target).blur();
+
+        console.log(multiUserChat);
+        return false;
+    } else {
+        // When start multi user chat is clicked..
+        console.log("Start multi chat!");
+    }
+});
+
 // Select a user event
 $(document).on('click', '.user', function () {
-    // Reset the selecte user global
+    // Reset the selected user global
     selectedUser = null;
 
     // Get the ID of the currently selected user
@@ -105,6 +127,7 @@ $(document).on('click', '.user', function () {
             }
         }
     }
+
     // Cancel the interval timer
     clearInterval(selectedUser.interval);
     // Remove the blinking class
@@ -143,7 +166,10 @@ chatHubConnection.client.getNewMessage = function (senderId, message) {
     {
         sendingBuddy = initBuddy(senderId);
     }
-    
+
+    console.log(message);
+    //console.log("Their fingerprint: " + sendingBuddy.otr.their_priv_pk.fingerprint())
+
     // Start the receiving of the message
     sendingBuddy.otr.receiveMsg(message, senderId);
 };
@@ -170,12 +196,28 @@ function login(username) {
 
     /* Setup OTR */
     // Check if there is a DSA key available
-    var myKey = localStorage.getItem("DSA");
-    if (myKey == null) {
+    var myPrivateKey = getPrivateDsa();
+    if (myPrivateKey == null) {
         // Generate and save a new DSA key
-        myKey = new DSA();
-        localStorage.setItem("DSA", myKey);
+        myDsaKey = new DSA();
+        setPrivateDsa(myDsaKey);
     }
+    else
+    {
+        myDsaKey = DSA.parsePrivate(myPrivateKey);
+    }
+}
+
+// Set the DSA
+function setPrivateDsa(dsa) {
+    // Save the Private DSA key in the localStorage
+    localStorage.setItem("DSA", dsa.packPrivate());
+}
+
+// Get the DSA
+function getPrivateDsa() {
+    // Retrieve the Private DSA key from localStorage
+    return localStorage.getItem("DSA");
 }
 
 // Find the buddy in the contact array by id
@@ -195,9 +237,9 @@ function findBuddyInContacts(buddyId) {
 // Init a new buddy object
 function initBuddy(buddyId) {
     // provide options
-    var options = { fragment_size: 140, send_interval: 200, priv: localStorage.getItem("DSA") };
+    var options = { fragment_size: 140, send_interval: 200, priv: myDsaKey };
     // Init the connection
-    var newOtr = new OTR();
+    var newOtr = new OTR(options);
     // Receive message event
     newOtr.on('ui', function (msg, encrypted, meta) {
         console.log("message to display to the user: " + msg);
@@ -232,6 +274,7 @@ function initBuddy(buddyId) {
     // Send message event
     newOtr.on('io', function (msg, meta) {
         console.log("message to send to buddy: " + msg);
+        //console.log("My fingerprint: " + this.priv.fingerprint());
         chatHubConnection.server.sendMessage(sessionStorage.getItem("connectionID"), buddyId, msg);
     });
     // Error event
@@ -313,63 +356,3 @@ function addMessageToList(sender, message) {
         </li>"
     );
 }
-
-// Change the current behavior of the checkboxes and start multi user chat
-$('.dropdown-menu a').on('click', function (event) {
-    var $target = $(event.currentTarget),
-        val = $target.attr('data-value'),
-        $inp = $target.find('input'),
-        idx;
-    
-    //Pushes and splices user from and to multiUserChat array
-    if (val != undefined) {
-        if ((idx = multiUserChat.indexOf(val)) > -1) {
-            multiUserChat.splice(idx, 1);
-            setTimeout(function () { $inp.prop('checked', false) }, 0);
-        } else {
-            multiUserChat.push(val);
-            setTimeout(function () { $inp.prop('checked', true) }, 0);
-        }
-
-        $(event.target).blur();
-
-        console.log(multiUserChat);
-        return false;
-    } else {
-        // When start multi user chat is clicked..
-        console.log("Start multi chat!");
-    }
-});
-
-//function startConversation() {
-//    // provide options
-//    var options = {
-//        fragment_size: 140
-//        , send_interval: 200
-//        , priv: localStorage.getItem("DSA")
-//    }
-
-//    var buddy = new OTR(options)
-
-//    buddy.on('ui', function (msg, encrypted, meta) {
-//        console.log("message to display to the user: " + msg)
-//        // encrypted === true, if the received msg was encrypted
-//        console.log("(optional) with receiveMsg attached meta data: " + meta)
-//    })
-
-//    buddy.on('io', function (msg, meta) {
-//        console.log("message to send to buddy: " + msg)
-//        console.log("(optional) with sendMsg attached meta data: " + meta)
-//    })
-
-//    buddy.on('error', function (err, severity) {
-//        if (severity === 'error')  // either 'error' or 'warn'
-//            console.error("error occurred: " + err)
-//    })
-//}
-
-//function endConversation() {
-//    buddy.endOtr(function () {
-//        // Calls backwhen the 'disconnect' message has been sent.
-//    });
-//}
