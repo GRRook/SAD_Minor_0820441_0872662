@@ -8,10 +8,19 @@ var chatHubConnection = $.connection.myHub;
 var myDsaKey;
 // Id of the selected user
 var selectedUser = null;
+// Global buddyId
+var budId;
 // Multi user array for mp-OTR
 var multiUserChat = [];
-// The contacts array contains all buddies
+// The contacts arry contains all buddies
 var contact = [];
+/* The buddy object
+ * 
+ * buddy.id = null;
+ * buddy.otr = new OTR();
+ * buddy.interval = null;
+ * buddy.messages = [];
+ */
 
 // User login event
 $('#loginUser').on('click', function() {
@@ -134,6 +143,24 @@ $(document).on('click', '.user', function () {
     $(userElement).closest('.onlineUsers .user').removeClass('alert-danger');
 });
 
+// Submit a question to the SMP
+$(document).on('click', '#smpQuestionSubmit', function (event) {
+    // Get the secret and question
+    var secret = $("#smpSecret").val();
+    var question = $("#smpQuestion").val();
+
+    // Find buddy in contacts by id
+    var buddy = findBuddyInContacts(budId);
+    buddy.otr.smpSecret(secret, question);
+});
+
+// Submit an answer to the SMP
+$(document).on('click', '#smpAnswerSubmit', function (event) {
+    var buddy = findBuddyInContacts(budId);
+    buddy.otr.smpSecret($("#smpSecretA").val());
+
+});
+
 // Receive new online user event
 chatHubConnection.client.getNewOnlineUser = function (id, username) {
     // Add the user to the online users list
@@ -166,7 +193,7 @@ chatHubConnection.client.getNewMessage = function (senderId, message) {
     {
         sendingBuddy = initBuddy(senderId);
     }
-
+    
     console.log(message);
     //console.log("Their fingerprint: " + sendingBuddy.otr.their_priv_pk.fingerprint())
 
@@ -206,7 +233,7 @@ function login(username) {
     {
         myDsaKey = DSA.parsePrivate(myPrivateKey);
     }
-}
+    }
 
 // Set the DSA
 function setPrivateDsa(dsa) {
@@ -236,6 +263,7 @@ function findBuddyInContacts(buddyId) {
 
 // Init a new buddy object
 function initBuddy(buddyId) {
+    budId = buddyId;
     // provide options
     var options = { fragment_size: 140, send_interval: 200, priv: myDsaKey };
     // Init the connection
@@ -297,12 +325,61 @@ function initBuddy(buddyId) {
                     // Change color to success
                     userElement.closest("li").removeClass('alert-info').addClass('alert-success');
                 }
+
+                // Show SMP button (HET SHOWEN WERKT WEL MAAR NIET MET MEERDERE USERS OP DEZE MANIER)
+                $(".social").show();
                 break
             case OTR.CONST.STATUS_END_OTR:
                 // if buddy.msgstate === OTR.CONST.MSGSTATE_FINISHED
                 // inform the user that his correspondent has closed his end
                 // of the private connection and the user should do the same
+                console.log("End OTR");
                 break
+        }
+    });
+    // SMP event
+    newOtr.on('smp', function (type, data, act) {
+        switch (type) {
+            case 'question':
+                console.log("question data: " + data);
+                console.log("question act: " + act);
+
+                $("#smpQuestionA").text(data);
+                $('#answerSecret').modal('toggle');
+                // call(data) some function with question?
+                // return the user supplied data to
+                // userA.smpSecret(secret)
+                break
+            case 'trust':
+                console.log("trust data: " + data);
+                console.log("trust act: " + act);
+                if (act == "asked") {
+                    if (data == true) {
+                        $(".social").toggleClass("btn-success");
+                    } else {
+                        $(".social").toggleClass("btn-danger");
+                    }
+                }
+                else if (act == "answered"){
+                    if (data == true) {
+                        $(".social").toggleClass("btn-success");
+                    } else {
+                        //Wrong answer dude
+                    }
+                }
+                
+                // smp completed
+                // check data (true|false) and update ui accordingly
+                // act ("asked"|"answered") provides info one who initiated the smp
+                break
+            case 'abort':
+                // smp was aborted. notify the user or update ui
+                console.log("abort data: " + data);
+                console.log("abort act: " + act);
+            default:
+                throw new Error('Unknown type.');
+                console.log("Error data: " + data);
+                console.log("Error act: " + act);
         }
     });
     // Init the OTR connection
@@ -334,11 +411,23 @@ function addUserToOnlineUserList(id, username) {
                             <small class=\"text-muted\">Man</small> \
                             <i class=\"fa fa-x2\"></i> \
                         </div> \
+                        <div class=\"dropdown pull-right\"> \
+                            <button type=\"button\" id=\"" + id + "\" onClick=\"socialistMP('"+ id + "')\" class=\"btn btn-primary btn-xs social\" style=\"display:none\" data-toggle=\"modal\" data-target=\"#myModal\"> \
+                                <span class=\"glyphicon glyphicon-star\" aria-hidden=\"true\"></span> SMP \
+                            </button> \
+                        <\div> \
                     </div> \
                 </div> \
             </li>"
         );
     }
+}
+
+// Set the global budId for the socialist millionaire protocol
+function socialistMP(id) {
+    console.log("socialistMP " + id);
+    // Set the global budId
+    budId = id;
 }
 
 // Add the new message to the chatbox
