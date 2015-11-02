@@ -228,6 +228,9 @@ function login(username) {
         chatHubConnection.server.login(username);
     });
 
+    // Add the username to the session
+    sessionStorage.setItem("username", username);
+
     // Hide login
     $("#login").hide();
     // Show home
@@ -245,18 +248,50 @@ function login(username) {
     {
         myDsaKey = DSA.parsePrivate(myPrivateKey);
     }
-    }
+}
 
 // Set the DSA
 function setPrivateDsa(dsa) {
+    var username = sessionStorage.getItem("username");
     // Save the Private DSA key in the localStorage
-    localStorage.setItem("DSA", dsa.packPrivate());
+    localStorage.setItem("DSA-" + username, dsa.packPrivate());
 }
 
 // Get the DSA
 function getPrivateDsa() {
+    var username = sessionStorage.getItem("username");
     // Retrieve the Private DSA key from localStorage
-    return localStorage.getItem("DSA");
+    return localStorage.getItem("DSA-" + username);
+}
+
+// Set the TOFU based on the fingerprint (Trust On First Use)
+function setTofu(buddyId, username) {
+    var buddy = findBuddyInContacts(buddyId);
+    var fingerprint = buddy.otr.their_priv_pk.fingerprint();
+    localStorage.setItem(username + "_publicDSA", fingerprint);
+}
+
+// Check if the TOFU is set(Trust On First Use)
+function issetTofu(username) {
+    var tofu = localStorage.getItem(username + "_publicDSA");
+    if (tofu != null) {
+        return true;
+    }
+    return false;
+}
+
+// Check the TOFU with the fingerprint (Trust On First Use)
+function checkTofu(buddyId, username) {
+    var isValid = false;
+    var buddy = findBuddyInContacts(buddyId);
+    var tofu = localStorage.getItem(username + "_publicDSA");
+    console.log(tofu);
+    var fingerprint = buddy.otr.their_priv_pk.fingerprint();
+    console.log(fingerprint);
+    if (tofu == fingerprint) {
+        isValid = true;
+    }
+    return isValid;
 }
 
 // Find the buddy in the contact array by id
@@ -336,6 +371,19 @@ function initBuddy(buddyId) {
                     userElement.closest("li").removeClass('alert-info').addClass('alert-success');
                     // Show the SMP button
                     userElement.siblings("button").show();
+
+                    // Get the username
+                    var userName = $('#' + buddyId).text();
+                    // Find out if there is TOFU
+                    if (issetTofu(userName)) {
+                        // Check if the TOFU is valid
+                        if (!checkTofu(buddyId, userName)) { alert('Warning! The channel could be hacked!'); }
+                    }
+                    else
+                    {
+                        // Set TOFU
+                        setTofu(buddyId, userName);
+                    }
                 }
                 break
             case OTR.CONST.STATUS_END_OTR:
